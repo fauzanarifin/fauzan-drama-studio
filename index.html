@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drama AI Studio V1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>tailwind.config={darkMode:'class'}</script>
+<style>
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+@keyframes mq{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+.mq{display:inline-flex;white-space:nowrap;gap:4rem;animation:mq 40s linear infinite}.mq:hover{animation-play-state:paused}
+.card{background:#fff;border:1px solid #e2e8f0}.dark .card{background:#18181b;border-color:#27272a}
+.sub{background:#f8fafc;border:1px solid #e2e8f0}.dark .sub{background:#09090bb3;border-color:#27272a}
+.inp{background:#fff;border:1px solid #cbd5e1;color:#0f172a;border-radius:.75rem;padding:.55rem .8rem;font-weight:700;font-size:.8rem;outline:none;width:100%}
+.dark .inp{background:#09090b;border-color:#3f3f46;color:#f4f4f5}.inp:focus{border-color:#e11d48}
+.btn{font-weight:800;font-size:.75rem;border-radius:.75rem;padding:.6rem 1rem;color:#fff;display:inline-flex;align-items:center;gap:.4rem}
+.chip{font-weight:800;font-size:.75rem;border-radius:.75rem;padding:.55rem .9rem;border:1px solid #cbd5e1;background:#e2e8f0;color:#0f172a}
+.dark .chip{background:#27272a;border-color:#3f3f46;color:#f4f4f5}
+.chip.on,.tab.on{background:#e11d48!important;color:#fff!important;border-color:#fb7185!important}
+.tab{font-weight:800;font-size:.75rem;border-radius:.75rem;padding:.7rem;border:1px solid #cbd5e1;background:#e2e8f0;color:#0f172a;text-align:center}
+.dark .tab{background:#27272a;border-color:#3f3f46;color:#f4f4f5}.tab:disabled{opacity:.4;cursor:not-allowed}
+.tab.on{background:linear-gradient(90deg,#e11d48,#d97706)!important}
+.lbl{display:block;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem}
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-zinc-100 pt-8 min-h-screen">
+
+<div class="fixed top-0 inset-x-0 z-50 overflow-hidden py-1.5 text-[11px] font-bold shadow-md text-white bg-gradient-to-r from-rose-700 via-rose-600 to-amber-600 dark:from-zinc-900 dark:to-zinc-900 dark:text-amber-300">
+ <div class="mq"><span>✨ Gabung Komunitas Drama AI Studio: aplikasi terbaru, tutorial lengkap, dan konsultasi private!</span><span>🔥 Upgrade skill Drama AI kamu bersama Fauzan Studio!</span><span>🛡️ © 2026 Fauzan Drama AI Studio. Khusus member resmi. Dilarang menyebarluaskan atau menjual aplikasi tanpa izin.</span></div>
+</div>
+
+<div id="modal"></div><div id="toast" class="fixed bottom-5 right-5 z-[60]"></div><div id="busy"></div>
+
+<header class="bg-white dark:bg-zinc-900/90 border-b border-slate-200 dark:border-zinc-800">
+ <div class="px-4 sm:px-8 py-5">
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+   <div class="flex items-center gap-3.5">
+    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-amber-500 flex items-center justify-center text-white text-xl shadow-lg shadow-rose-600/30">🎬</div>
+    <div><div class="flex flex-wrap items-baseline gap-2"><h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Drama AI Studio V1.0</h1><span class="text-xs font-bold text-rose-700 dark:text-amber-400">by Fauzan Studio</span></div>
+    <p id="subtitle" class="text-xs sm:text-sm font-semibold text-slate-600 dark:text-zinc-400"></p></div>
+   </div>
+   <div class="flex flex-wrap items-center gap-2.5" id="hdrTools"></div>
+  </div>
+  <div id="tabs" class="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+ </div>
+</header>
+<main id="main" class="px-4 sm:px-8 py-6 space-y-6"></main>
+<footer class="px-4 sm:px-8 pb-8"><div class="p-4 rounded-2xl border text-xs bg-slate-100 border-slate-300 dark:bg-zinc-900/90 dark:border-zinc-800 dark:text-zinc-300">
+<b class="text-rose-500">© 2026 Fauzan Drama AI Studio</b> — Aplikasi ini khusus member resmi. Dilarang menyebarluaskan, menjual kembali, atau memodifikasi tanpa izin tertulis dari Fauzan Studio. Fitur AI berjalan di layanan Google Gemini; ketersediaannya mengikuti ketetapan Google.</div></footer>
+
+<script>
+/* ===== DATA ===== */
+const CATS={"Drama Indonesia":["Keluarga","Percintaan","Persahabatan","Kehidupan","Sosial","Religi","Sekolah","Komedi"],"Drama Islam":["Religi Islami","Cinta Halal","Pernikahan Islami","Hijrah","Keluarga Islami","Dakwah","Perjuangan Iman"],"Drama Inspiratif":["Motivasi Hidup","Perjuangan Hidup","Kisah Sukses","Pengorbanan","Pantang Menyerah","Kebaikan Hati","Kebangkitan dari Kegagalan","Kisah Nyata","Berbagi Sesama"],"Drama Horor":["Supranatural","Psikologis","Misteri","Hantu"],"Drama Romantis":["Cinta Segitiga","Romansa Remaja","Cinta Terlarang","Cinta Pertama","Pernikahan Kontrak","Musuh Jadi Kekasih","Sahabat Jadi Kekasih","Cinta Beda Status"],"Drama Melayu":["Keluarga","Romansa","Rumah Tangga","Drama Adat dan Budaya","Konflik Warisan","Cinta Terlarang","Religi","Kisah Kehidupan Desa"],"Drama Hollywood":["Medis","Hukum","Politik","Sejarah","Keluarga","Romantis","Perang"],"Drama China":["Xianxia (Fantasi Kultivasi)","Wuxia (Pendekar dan Bela Diri)","Romansa Modern","Kerajaan","Sejarah","Sekolah","Medis","Bisnis","Fantasi","Time Travel"],"Drama Korea":["Romansa Kantor","Romansa Sekolah","Hukum","Medis","Thriller","Kerajaan (Sageuk)","Balas Dendam","Keluarga","Fantasi","Slice of Life"],"Drama CEO":["Drama CEO Menyamar","CEO Dingin","CEO Jatuh Cinta","CEO dan Karyawan","Pernikahan Kontrak","CEO Kaya Raya","Cinta Beda Status","Persaingan Bisnis","Pewaris Perusahaan","CEO Dominan","Cinta Segitiga"],"Drama Rumah Tangga":["Perselingkuhan","Perceraian","Konflik Mertua dan Menantu","Pernikahan Tanpa Cinta","Rahasia Keluarga","Pengorbanan Pasangan"],"Drama Kerajaan":["Intrik Istana","Perebutan Takhta","Romansa Kerajaan","Perang Kerajaan","Pengkhianatan","Balas Dendam","Putri dan Pangeran","Perjalanan Waktu","Fantasi Kerajaan"],"Custom":["Custom"]};
+const BADGES=[["✨","Rekomendasi","bg-indigo-700"],["❤️","Terfavorit","bg-rose-700"],["🔥","Terpopuler","bg-amber-700"],["📈","Potensi Viral","bg-emerald-700"],["⭐","Pilihan Lainnya","bg-slate-800"]];
+const UI={id:{sub:"Drama AI Generator",s:["1. Naskah","2. Karakter & Storyboard","3. Prompt Video","4. Desain Gambar","5. SEO & Tips Viral"]},en:{sub:"AI Short Drama Studio",s:["1. Script","2. Characters & Storyboard","3. Video Prompts","4. Poster & Visuals","5. SEO & Viral Tips"]},ms:{sub:"Penjana Drama AI",s:["1. Skrip","2. Watak & Storyboard","3. Prompt Video","4. Rekaan Gambar","5. SEO & Tip Viral"]}};
+const NAMES={"Drama Korea":[["Kang Tae-oh","Lee Joon-hyuk","Park Min-jun"],["Han So-yi","Yoon Seo-yeon","Kim Ha-eun"]],"Drama China":[["Lin Wei","Gu Yanchen","Shen Xiao"],["Su Wan","Jiang Yue","Lin Ruoxi"]],"Drama Hollywood":[["Ethan Carter","Liam Vance","Nathan Brooks"],["Claire Bennett","Elena Ross","Olivia Parker"]],"Drama Islam":[["Zaidan","Farhan","Salman"],["Aisyah","Zahra","Maryam"]],"Drama Melayu":[["Amirul","Hakim","Danish"],["Nurul","Aina","Farah"]],"def":[["Bima","Arka","Raka"],["Nadia","Laras","Sinta"]]};
+const TITLE_POOL={"Keluarga":["Sepatu Usang Ayah di Hari Wisuda","Meja Makan Ibu yang Tak Lagi Penuh","Surat Terakhir dari Kakak Sulung","Pulang ke Rumah Kayu di Ujung Senja","Tabungan Kaleng Biskuit untuk Adik","Doa Ibu di Balik Jendela Dapur","Langkah Kecil yang Menguatkan Hati","Payung Teduh untuk Hari Esok"],
+"Percintaan":["Hujan Sore di Halte Sudirman","Kopi Pahit dan Senyum Gadis Toko Buku","Menunggu Kamu di Stasiun Terakhir","Dua Payung di Bawah Langit Senja","Janji yang Belum Sempat Terucap","Sepucuk Surat di Meja Perpustakaan"],
+"Drama CEO Menyamar":["Pemilik Gedung Itu Menyamar Jadi Petugas Kebersihan","Miliarder Muda Menyamar Sebagai Kurir Paket","Direktur Utama Menyamar Menjadi Pelayan Restoran","Pewaris Grup Raksasa Menyamar Jadi Satpam Kantor","Presiden Direktur Menyamar Sebagai Karyawan Magang","CEO Wanita Itu Menyamar Jadi Staf Administrasi"],
+"Hantu":["Penunggu Kursi Goyang di Kamar Belakang","Tangisan Pelan dari Lantai Atas","Rumah Warisan yang Tak Boleh Ditempati","Panggilan Namaku dari Hutan Bambu"],
+"Religi":["Sajadah Tua di Sudut Musala","Suara Azan yang Memanggil Pulang","Tasbih Kayu Peninggalan Kakek","Doa yang Menembus Langit Subuh"]};
+const EN_OPEN=["Midnight Promise at","Last Letter From","Silent Oath of","Two Hearts Under","Whispers Behind","Secret Key to","Footsteps Across","Echoes Inside"];
+const EN_PLACE={"Drama Korea":["the Royal Palace","Gangnam Tower","Courtroom Seven","Mapo Alley","the Rooftop Garden"],"Drama China":["the Nine Heavens","Jade Pavilion","Shanghai Bund","Dragon Pass","Lantern Street"],"Drama Hollywood":["Operating Room Four","the Supreme Court","Grand Central","Cedar Creek","Brooklyn Bridge"]};
+const ID_A=["Sepucuk Surat","Payung Teduh","Langkah Kecil","Janji Lama","Lampu Teras","Kotak Kayu","Senyum Tenang","Pelukan Hangat","Kursi Kosong","Doa Tulus"];
+const ID_B=["di Ujung Senja","yang Disimpan Ibu","Setelah Hujan Reda","di Rumah Kayu Ayah","yang Menguatkan Hati","di Balik Air Mata","Penuh Harapan Baru","Setelah Sepuluh Tahun"];
+const OUTFIT={F:"modest long-sleeve blouse with high neckline and ankle-length wide-leg trousers, loose fit, closed-toe shoes",M:"tailored navy blazer over crisp white shirt, slim dark trousers, leather shoes"};
+const NEG="STRICT NEGATIVE VISUAL RULE: DO NOT write, print, or display the word 'Scene', scene numbers, clapperboard markings, script labels, or gibberish text anywhere in the image. Female characters: modest, non-form-fitting, chest and shoulders covered, long sleeves, ankle-length bottoms.";
+const BAN=/\b(porn|porno|bugil|telanjang|nude|nsfw|erotis|gore|mutilasi|pedofil|bunuh diri|self[- ]harm|teroris|nazi|hitler|sabu-sabu|kokain|heroin)\b/i;
+
+/* ===== STATE ===== */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const S={lang:"id",dark:false,step:1,max:1,cat:"Drama Indonesia",genre:"Keluarga",custom:"",mode:"ai",manual:"",titles:[],sel:"",seed:Date.now()%99991,
+ src:"Paling Viral",premise:"",dlang:"Bahasa Indonesia",wm:"",dur:"1 Menit",ratio:"9:16",time:"Rekomendasi AI",weather:"Rekomendasi AI",
+ cast:[],script:null,locked:false,vprompts:[],hooks:{h1:"Satu Keputusan yang Mengubah Takdir Mereka Selamanya!",h2:"Di Balik Senyum Itu, Tersimpan Perjuangan yang Menguras Air Mata"},seo:null,key:store.get("gk")||""};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const title=()=>S.mode==="manual"?(S.manual.trim()||"Judul Drama Pilihan"):(S.sel||S.titles[0]||"Judul Drama AI");
+const genreEff=()=>(S.cat==="Custom"||S.genre==="Custom")?(S.custom.trim()||"Kehidupan & Drama"):S.genre;
+
+/* ===== UTIL ===== */
+function hash(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return Math.abs(h)}
+function shuffle(arr,seed){const a=[...arr];let s=seed+104729;for(let i=a.length-1;i>0;i--){s=(Math.imul(s,1664525)+1013904223)>>>0;const j=s%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function genTitles(cat,genre,seed){
+ const sd=hash(cat+genre)+seed;
+ if(EN_PLACE[cat]){const pl=EN_PLACE[cat];const en=[0,1,2].map(i=>`${EN_OPEN[(sd+i*3)%EN_OPEN.length]} ${pl[(sd+i*5)%pl.length]}`);
+  const id=[0,1].map(i=>`${ID_A[(sd+i*4)%ID_A.length]} ${ID_B[(sd+i*3)%ID_B.length]}`);return [...en,...id]}
+ const pool=TITLE_POOL[genre]||[];const dyn=[0,1,2,3,4,5].map(i=>`${ID_A[(sd+i*3)%ID_A.length]} ${ID_B[(sd+i*5+1)%ID_B.length]}`);
+ return [...new Set([...shuffle(pool,sd).slice(0,4),...dyn])].slice(0,5)}
+function toast(m){$("toast").innerHTML=`<div class="px-4 py-3 rounded-xl bg-emerald-700 text-white font-bold text-xs shadow-2xl border border-emerald-400">✔ ${esc(m)}</div>`;setTimeout(()=>$("toast").innerHTML="",3000)}
+function busy(t){$("busy").innerHTML=t?`<div class="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4"><div class="card rounded-2xl p-6 max-w-md w-full text-center"><div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-2xl animate-pulse">🎞️</div><h3 class="font-extrabold text-lg">AI Sedang Memproses...</h3><p class="text-sm opacity-80">${esc(t)}</p></div></div>`:""}
+function copy(t,l="Teks"){const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;left:-9999px";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast(l+" berhasil disalin!")}catch(e){}ta.remove()}
+function err(m){$("modal").innerHTML=`<div class="fixed inset-0 z-[65] bg-black/70 flex items-center justify-center p-4"><div class="max-w-md w-full rounded-2xl p-5 bg-rose-900 text-white border-2 border-rose-400 space-y-3"><p class="text-sm font-bold">⚠ ${esc(m)}</p><div class="text-right"><button class="btn bg-white !text-rose-900" onclick="closeModal()">Tutup</button></div></div></div>`}
+function closeModal(){$("modal").innerHTML=""}
+
+/* ===== GEMINI ===== */
+async function gemini(prompt,schema){
+ if(!S.key)throw new Error("Isi Gemini API Key dulu (tombol 🔑 API Key di header).");
+ let last;for(const model of["gemini-2.5-flash","gemini-2.0-flash"]){
+  try{const body={contents:[{role:"user",parts:[{text:prompt}]}],systemInstruction:{parts:[{text:"Seluruh konten WAJIB non-eksplisit, sopan, tanpa kekerasan grafis, tanpa tokoh publik nyata atau merek. Karakter wanita berpakaian longgar dan tertutup."}]}};
+   if(schema)body.generationConfig={responseMimeType:"application/json",responseSchema:schema};
+   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(S.key)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   if(!r.ok)throw new Error("HTTP "+r.status+": "+(await r.text()).slice(0,160));
+   const d=await r.json();const t=d?.candidates?.[0]?.content?.parts?.[0]?.text;if(!t)throw new Error("Respons AI kosong.");
+   return schema?JSON.parse(t):t}catch(e){last=e}}
+ throw last}
+
+/* ===== CAST ===== */
+function defaultCast(){
+ const n=NAMES[S.cat]||NAMES.def;const off=hash(title())%3;const pick=(g,i)=>n[g][(off+i)%3];
+ const ceo=S.genre==="Drama CEO Menyamar";
+ return [
+  {id:"c1",label:"Tokoh Baik",fn:"Tokoh Utama",gender:ceo?"Pria":"Wanita",name:"",age:"25",role:ceo?"CEO pemilik perusahaan yang menyamar untuk mengaudit kejujuran manajemen dari bawah. Wajah karismatik, sorot mata hangat namun fokus.":"Protagonis berhati tulus, pekerja keras, teguh memegang prinsip demi keluarganya. Tutur kata santun namun berani membela kebenaran."},
+  {id:"c2",label:"Tokoh Jahat",fn:"Lawan Utama",gender:"Pria",name:"",age:"36",role:"Lawan utama yang ambisius dan licik, tatapan dingin menusuk, menekan keadaan tokoh utama demi keuntungan pribadi."},
+  {id:"c3",label:"Tokoh Pendukung",fn:"Sahabat",gender:ceo?"Wanita":"Pria",name:"",age:"27",role:"Sahabat setia yang hadir di saat genting untuk membuka bukti kebenaran dan menguatkan tokoh utama."}
+ ].map((c,i)=>({...c,name:pick(c.gender==="Wanita"?1:0,i)}))}
+function castFix(){const used=new Set();S.cast.forEach((c,i)=>{const n=NAMES[S.cat]||NAMES.def;const arr=n[c.gender==="Wanita"?1:0];if(used.has(c.name))c.name=arr.find(x=>!used.has(x))||c.name+" "+(i+1);used.add(c.name)})}
+const checklist=()=>{const m=S.cast.filter(c=>c.fn==="Tokoh Utama").length;return{main:m===1,count:S.cast.length>=2,ok:m===1&&S.cast.length>=2,m}};
+const FNS=["Tokoh Utama","Lawan Utama","Sahabat","Keluarga","Pasangan/Cinta","Mentor","Pembawa Humor"];
+function lock(c){return `[${c.name} (${c.label}) - ${c.gender==="Wanita"?"Female":"Male"}, ${c.age} years old, ${S.cat} actor/actress facial features, ${c.role.slice(0,140)}. Outfit: ${c.gender==="Wanita"?OUTFIT.F:OUTFIT.M}. ${c.gender==="Wanita"?"Strictly modest clothing, no tight clothes.":""}${S.wm?` Small lapel pin engraved "${S.wm}".`:""}]`}
+
+/* ===== ACTIONS ===== */
+function setTitles(){S.titles=genTitles(S.cat,genreEff(),S.seed);S.sel=S.titles[0];S.cast=defaultCast()}
+function setCat(v){S.cat=v;S.genre=CATS[v][0];S.seed=Date.now()%99991;setTitles();render()}
+function setGenre(v){S.genre=v;S.seed=Date.now()%99991;setTitles();render()}
+function applyCustom(){setTitles();render()}
+function pickTitle(i){S.sel=S.titles[i];S.cast=defaultCast();render()}
+async function shuffleTitles(){
+ S.seed=(S.seed*7+13)%99991+1;
+ if(S.key){busy("Meminta 5 ide judul baru dari AI...");try{
+  const en=EN_PLACE[S.cat];
+  const r=await gemini(`Buat TEPAT 5 judul drama pendek menarik. Budaya: ${S.cat}. Tema: ${genreEff()}. Seed ${Math.random()}. ${en?"3 judul Inggris sinematik dan 2 judul Indonesia.":"Semua Bahasa Indonesia baku."} DILARANG menempelkan nama kategori/genre mentah, DILARANG tanda kurung. ${S.genre==="Drama CEO Menyamar"?"Setiap judul wajib memuat 'Menyamar Jadi/Sebagai/Menjadi ...'.":""}`,{type:"OBJECT",properties:{titles:{type:"ARRAY",items:{type:"STRING"}}},required:["titles"]});
+  const t=(r.titles||[]).map(x=>x.replace(/[()[\]]/g,"").trim()).filter(x=>x.length>=8).slice(0,5);if(t.length){S.titles=t;S.sel=t[0]}else throw 0}
+  catch(e){S.titles=genTitles(S.cat,genreEff(),S.seed);S.sel=S.titles[0]}busy("")}
+ else{S.titles=genTitles(S.cat,genreEff(),S.seed);S.sel=S.titles[0]}
+ S.cast=defaultCast();render();toast("5 ide judul baru ditampilkan!")}
+function upCast(id,f,v){const c=S.cast.find(x=>x.id===id);c[f]=v;
+ if(f==="gender"){const n=NAMES[S.cat]||NAMES.def;c.name=n[v==="Wanita"?1:0].find(x=>!S.cast.some(o=>o!==c&&o.name===x))||c.name;render()}
+ if(f==="fn"){if(v==="Tokoh Utama")S.cast.forEach(o=>{if(o!==c&&o.fn==="Tokoh Utama")o.fn="Sahabat"});render()}
+ if(f==="label")render()}
+function addChar(){const g=S.cast.length%2?"Pria":"Wanita";const n=(NAMES[S.cat]||NAMES.def)[g==="Wanita"?1:0];
+ S.cast.push({id:"c"+Date.now(),label:"Tokoh Pendukung",fn:"Sahabat",gender:g,name:n.find(x=>!S.cast.some(o=>o.name===x))||"Tokoh "+(S.cast.length+1),age:"26",role:"Sosok pendukung setia yang hadir di saat genting."});render()}
+function delChar(id){const c=S.cast.find(x=>x.id===id);if(S.cast.length<=2)return toast("Minimal harus ada 2 tokoh dalam drama.");if(c.fn==="Tokoh Utama"&&checklist().m<=1)return toast("Ini satu-satunya Tokoh Utama.");S.cast=S.cast.filter(x=>x.id!==id);render()}
+function mins(){return{"1 Menit":1,"2 Menit":2,"3 Menit":3,"10 Menit":10,"1 Jam":60}[S.dur]||2}
+async function genScript(){
+ const ck=checklist();if(!ck.ok)return err("Lengkapi syarat karakter: 1 Tokoh Utama dan minimal 2 tokoh.");
+ if(BAN.test(title()+" "+genreEff()))return err("Judul/genre melanggar kebijakan keamanan video. Mohon ganti.");
+ const m=mins(),epi=m>3,n=epi?15:m*6;
+ busy(`Menulis naskah "${title()}" (${n} scene @ 10 detik)...`);
+ try{
+  const names=S.cast.map(c=>c.name).join(", ");
+  const cs=S.cast.map(c=>`- ${c.name} (${c.gender}, ${c.age} thn | ${c.label} | ${c.fn}): ${c.role}`).join("\n");
+  const prompt=`Buatkan naskah drama pendek profesional.
+Judul: "${title()}"\nKategori: ${S.cat}\nGenre: ${genreEff()}\nSumber ide: ${S.src} ${S.src==="Ide Cerita Sendiri"?"(Premis: "+S.premise+")":""}\nBahasa dialog: ${S.dlang}\nWaktu: ${S.time}\nCuaca: ${S.weather}
+KARAKTER (pakai nama persis: ${names}):\n${cs}
+ATURAN: 1) Sinopsis 4-6 kalimat utuh dari awal sampai akhir. 2) Tepat ${n} scene, masing-masing 10 detik. 3) Scene 1 langsung dibuka dengan hook konflik. 4) ${epi?"Format episode: tutup scene terakhir dengan cliffhanger menggantung.":"Cerita langsung tamat tuntas di scene terakhir tanpa cliffhanger."} 5) Dialog natural 20-28 kata per scene, format NamaTokoh: "Kalimat" | NamaTokoh2: "Kalimat". 6) Show, don't tell. 7) dialogueTranslationId = terjemahan dialog ke Bahasa Indonesia dengan format sama.`;
+  const r=await gemini(prompt,{type:"OBJECT",properties:{synopsis:{type:"STRING"},scenes:{type:"ARRAY",items:{type:"OBJECT",properties:{location:{type:"STRING"},characters:{type:"ARRAY",items:{type:"STRING"}},action:{type:"STRING"},dialogue:{type:"STRING"},dialogueTranslationId:{type:"STRING"}},required:["location","characters","action","dialogue","dialogueTranslationId"]}}},required:["synopsis","scenes"]});
+  S.script={title:title(),synopsis:r.synopsis||"",epi,scenes:(r.scenes||[]).map((s,i)=>({n:i+1,...s}))};
+  S.locked=false;S.vprompts=[];toast("Naskah drama profesional berhasil dibuat!")
+ }catch(e){err("Gagal membuat naskah: "+e.message)}
+ busy("");render()}
+function go(n){S.step=n;S.max=Math.max(S.max,n);render();scrollTo({top:0,behavior:"smooth"})}
+function toStep3(){
+ if(!S.locked){return err("Kunci Karakter & Outfit dulu agar wajah dan pakaian konsisten.")}
+ S.vprompts=S.script.scenes.map((sc,i)=>{
+  const cams=["Wide Establishing Shot, slow cinematic dolly-in","Medium Two-Shot, subtle handheld tracking","Intimate Close-Up, slow push-in on eyes","Over-The-Shoulder shot, locked-off with rack focus"];
+  const locks=(sc.characters||[]).map(n=>{const c=S.cast.find(x=>x.name.toLowerCase()===n.toLowerCase());return "- "+(c?lock(c):`[${n}]`)}).join("\n");
+  return {n:sc.n,text:`[DURATION: EXACTLY 10 SECONDS | ASPECT RATIO: ${S.ratio} | DIALOGUE LANGUAGE: ${S.dlang}]\n[CATEGORY & GENRE: ${S.cat} - ${genreEff()}]\n[VISUAL ACTION]:\nCamera: ${cams[i%4]}.\nAction: ${sc.action}\n\n[CHARACTER & OUTFIT LOCK]:\n${locks}\n\n[LOCATION]:\n${sc.location}, time: ${S.time}, weather: ${S.weather}${S.wm?`, signage "${S.wm}"`:""}\n\n[NATURAL DIALOGUE & STRICT LIP-SYNC RULE]:\n${sc.dialogue}\n(ONLY the mouth of the character currently speaking may move.)\n\n[AUDIO - SFX ONLY, NO BGM]:\nRealistic ambient room tone, natural footsteps.\n\n[${NEG}]`}});
+ go(3);toast("Prompt Video semua scene berhasil dibuat!")}
+function posterPrompts(){
+ const locks=S.cast.map(lock).join(" ");const syn=S.script?.synopsis||`Kisah ${genreEff()} berjudul ${title()}`;
+ const sty="photorealistic cinematic film still, real human actors, natural skin texture, 85mm lens, shallow depth of field";
+ const ctr=`The exact title "${title()}" MUST be placed dead-center as a theatrical 3D movie logo, spelled with 100% accuracy, never covering faces.`;
+ return [["Versi 1 (Judul Tengah + Hook)",`Official 8K theatrical drama poster (${S.ratio}) for "${title()}". STYLE: ${sty}. Story: ${syn}. Actors: ${locks}. Hook subtitle: "${S.hooks.h1}". ${ctr} ${NEG}`],
+ ["Versi 2 (Judul Tengah + Hook Alt)",`Alternative viral 8K drama poster (${S.ratio}) for "${title()}". STYLE: ${sty}. Actors: ${locks}. Hook: "${S.hooks.h2}". ${ctr} ${NEG}`],
+ ["Versi 3 (Judul + Nama Tokoh)",`Character-focused 8K drama poster (${S.ratio}) for "${title()}". STYLE: ${sty}. Actors: ${locks}. Name labels: ${S.cast.map(c=>c.name).join(", ")}. ${ctr} No hook text. ${NEG}`],
+ ["Foto Cover Single 4K",`Textless 4K cinematic keyframe (${S.ratio}) of the climax of "${title()}". STYLE: ${sty}. Context: ${syn}. Actors: ${locks}. ZERO TEXT. ${NEG}`],
+ ["3 Cuplikan Scene dalam 1 Gambar",`Seamless 3-panel cinematic storyboard collage (${S.ratio}) of 3 pivotal moments from "${title()}". STYLE: ${sty}. Actors: ${locks}. NO TEXT. ${NEG}`]]}
+async function genSeo(){
+ busy("Menganalisis algoritma SEO & strategi viral...");
+ try{S.seo=await gemini(`Buatkan paket SEO dan strategi viral untuk drama "${title()}" (${S.cat} - ${genreEff()}). Sinopsis: ${S.script?.synopsis||""}. Berikan 3 judul SEO, deskripsi singkat, 15 hashtag, keywords, caption TikTok, Reels, Shorts, dan 6 tips viral spesifik.`,{type:"OBJECT",properties:{seoTitles:{type:"ARRAY",items:{type:"STRING"}},shortDescription:{type:"STRING"},hashtags:{type:"ARRAY",items:{type:"STRING"}},tiktokCaption:{type:"STRING"},reelsCaption:{type:"STRING"},shortsCaption:{type:"STRING"},viralTips:{type:"ARRAY",items:{type:"STRING"}}},required:["seoTitles","shortDescription","hashtags","tiktokCaption","reelsCaption","shortsCaption","viralTips"]});go(5);toast("Paket SEO & Strategi Viral siap!")}
+ catch(e){err("Gagal memuat SEO: "+e.message)}busy("")}
+function resetAll(){Object.assign(S,{step:1,max:1,cat:"Drama Indonesia",genre:"Keluarga",custom:"",mode:"ai",manual:"",script:null,locked:false,vprompts:[],seo:null,wm:"",seed:Date.now()%99991});setTitles();render();toast("Studio direset!")}
+function editScene(n,f,v){const s=S.script.scenes.find(x=>x.n===n);s[f]=f==="characters"?v.split(",").map(x=>x.trim()).filter(Boolean):v}
+function editVP(n,v){S.vprompts.find(x=>x.n===n).text=v}
+function setKey(){const v=prompt("Tempel Gemini API Key (disimpan hanya di browser Anda):",S.key);if(v!==null){S.key=v.trim();store.set("gk",S.key);render();toast(S.key?"API Key tersimpan.":"API Key dihapus.")}}
+function copyrightModal(){$("modal").innerHTML=`<div class="fixed inset-0 z-[65] bg-black/75 flex items-center justify-center p-4"><div class="card max-w-lg w-full rounded-2xl p-6 border-2 !border-rose-500 space-y-3"><h3 class="font-extrabold">© Hak Cipta & Disclaimer Resmi — Fauzan Drama AI Studio</h3><div class="sub p-3 rounded-xl text-sm"><b class="text-rose-500">Hak Cipta & Lisensi:</b> khusus member resmi. Dilarang menyebarluaskan, menjual kembali, menyalin, atau memodifikasi tanpa izin tertulis dari Fauzan Studio.</div><div class="sub p-3 rounded-xl text-sm"><b class="text-amber-500">Layanan:</b> fitur AI berjalan lewat Google Gemini; ketersediaan fitur dan kuota mengikuti ketetapan Google dan tidak dijamin selamanya.</div><div class="text-right"><button class="btn bg-rose-600" onclick="closeModal()">Saya Mengerti & Menyetujui</button></div></div></div>`}
+
+/* ===== RENDER ===== */
+const opt=(arr,v)=>arr.map(a=>`<option ${a===v?"selected":""}>${esc(a)}</option>`).join("");
+const roleCls=l=>l==="Tokoh Baik"?"bg-emerald-800":l==="Tokoh Jahat"?"bg-rose-800":l==="Tokoh Netral"?"bg-amber-800":"bg-sky-800";
+function header(){
+ document.documentElement.classList.toggle("dark",S.dark);
+ $("subtitle").textContent=UI[S.lang].sub;
+ const ttl=title(),g=genreEff();
+ $("hdrTools").innerHTML=`
+ <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-700 max-w-md">🎬 <span class="shrink-0">Project Aktif:</span><b class="truncate">${esc(ttl)} <span class="opacity-80">(${esc(g)})</span></b></div>
+ <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border ${S.wm.trim()?"bg-emerald-800 text-white border-emerald-500":"bg-slate-200 text-slate-800 border-slate-300 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700"}">🏷 Watermark Pelindung: <u>${esc(S.wm.trim()||"Opsional (Tidak Diisi)")}</u></div>
+ <div class="inline-flex rounded-xl p-1 border bg-slate-100 border-slate-300 dark:bg-zinc-950 dark:border-zinc-800">${[["id","🇮🇩 Indonesia"],["en","🇬🇧 English"],["ms","🇲🇾 Melayu"]].map(([c,l])=>`<button onclick="S.lang='${c}';S.dlang=({id:'Bahasa Indonesia',en:'Inggris',ms:'Melayu'})['${c}'];render()" class="px-2.5 py-1 rounded-lg text-xs font-bold ${S.lang===c?"bg-rose-600 text-white shadow":"text-slate-700 dark:text-zinc-300"}">${l}</button>`).join("")}</div>
+ <button onclick="S.dark=!S.dark;render()" class="btn bg-slate-800 !text-amber-300 border border-slate-900 dark:bg-zinc-800 dark:border-zinc-700">${S.dark?"☀ Light Mode":"🌙 Dark Mode"}</button>
+ <button onclick="copyrightModal()" class="btn !text-amber-900 bg-amber-100 border border-amber-400 dark:bg-amber-950/80 dark:!text-amber-300 dark:border-amber-600">ⓘ Hak Cipta & Disclaimer</button>
+ <button onclick="setKey()" class="btn ${S.key?"bg-emerald-700":"bg-indigo-700"}">🔑 ${S.key?"API Key Aktif":"API Key"}</button>`;
+ $("tabs").innerHTML=UI[S.lang].s.map((l,i)=>`<button class="tab ${S.step===i+1?"on":""}" ${i+1>S.max?"disabled":""} onclick="go(${i+1})">${esc(l)}</button>`).join("")}
+
+function step1(){
+ const ck=checklist(),sc=S.script,bil=!!EN_PLACE[S.cat],isC=S.cat==="Custom"||S.genre==="Custom";
+ const titlesHtml=S.titles.slice(0,5).map((t,i)=>{const b=BADGES[i],on=S.sel===t;
+  return `<button onclick="pickTitle(${i})" class="w-full text-left p-3.5 rounded-xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${on?"bg-rose-50 border-rose-600 dark:bg-rose-950/50 dark:border-rose-500":"bg-slate-50 border-slate-300 hover:border-slate-400 dark:bg-zinc-950/60 dark:border-zinc-800"}">
+  <span class="flex items-center gap-3"><span class="w-5 h-5 rounded-full border flex items-center justify-center text-[11px] ${on?"bg-rose-600 border-rose-400 text-white":"border-zinc-500"}">${on?"✓":""}</span><span class="font-extrabold text-sm sm:text-base">${esc(t)}</span></span>
+  <span class="${b[2]} text-white px-3 py-1 rounded-lg text-[11px] font-extrabold shrink-0">${b[0]} ${b[1]}</span></button>`}).join("");
+ const castHtml=S.cast.map(c=>`<div class="sub p-4 rounded-xl space-y-3">
+  <div class="flex flex-wrap justify-between gap-2"><div class="flex gap-2 flex-wrap"><span class="px-3 py-1 rounded-lg text-xs font-extrabold text-white ${roleCls(c.label)}">${c.label}</span><span class="px-2.5 py-1 rounded-lg text-xs font-extrabold ${c.fn==="Tokoh Utama"?"bg-indigo-700 text-white":"bg-slate-200 dark:bg-zinc-800"}">${c.fn}</span></div>
+  <button onclick="delChar('${c.id}')" class="btn bg-rose-800 !py-1">🗑 Hapus</button></div>
+  <div class="grid grid-cols-2 lg:grid-cols-12 gap-3">
+   <div class="lg:col-span-3"><label class="lbl">Peran / Sifat</label><select class="inp" onchange="upCast('${c.id}','label',this.value)">${opt(["Tokoh Baik","Tokoh Jahat","Tokoh Pendukung","Tokoh Netral"],c.label)}</select></div>
+   <div class="lg:col-span-3"><label class="lbl">Fungsi Cerita</label><select class="inp" onchange="upCast('${c.id}','fn',this.value)">${opt(FNS,c.fn)}</select></div>
+   <div class="lg:col-span-2"><label class="lbl">Kelamin</label><select class="inp" onchange="upCast('${c.id}','gender',this.value)">${opt(["Wanita","Pria"],c.gender)}</select></div>
+   <div class="lg:col-span-2"><label class="lbl">Nama</label><input class="inp" value="${esc(c.name)}" oninput="upCast('${c.id}','name',this.value)"></div>
+   <div class="lg:col-span-2"><label class="lbl">Umur</label><input type="number" class="inp" value="${esc(c.age)}" oninput="upCast('${c.id}','age',this.value)"></div></div>
+  <div><label class="lbl">Deskripsi Peran</label><textarea rows="3" class="inp !font-medium" oninput="upCast('${c.id}','role',this.value)">${esc(c.role)}</textarea></div></div>`).join("");
+ const scenes=sc?sc.scenes.map(s=>`<div class="sub p-4 rounded-2xl space-y-3">
+  <div class="flex flex-wrap justify-between gap-2"><span class="px-3 py-1 rounded-lg text-xs font-extrabold bg-rose-600 text-white">Scene ${s.n} (10 Detik)</span><span class="text-xs font-bold">Karakter: ${esc((s.characters||[]).join(", "))}</span></div>
+  <div class="grid sm:grid-cols-2 gap-3"><div><label class="lbl">Lokasi</label><input class="inp" value="${esc(s.location)}" oninput="editScene(${s.n},'location',this.value)"></div><div><label class="lbl">Karakter Hadir</label><input class="inp" value="${esc((s.characters||[]).join(", "))}" oninput="editScene(${s.n},'characters',this.value)"></div></div>
+  <div><label class="lbl">Aksi & Ekspresi</label><textarea rows="2" class="inp !font-medium" oninput="editScene(${s.n},'action',this.value)">${esc(s.action)}</textarea></div>
+  <div><label class="lbl text-rose-500">Dialog (${esc(S.dlang)})</label><textarea rows="2" class="inp !font-medium" oninput="editScene(${s.n},'dialogue',this.value)">${esc(s.dialogue)}</textarea></div>
+  ${S.dlang!=="Bahasa Indonesia"?`<div><label class="lbl text-amber-500">Terjemahan Indonesia</label><textarea rows="2" class="inp !font-medium" oninput="editScene(${s.n},'dialogueTranslationId',this.value)">${esc(s.dialogueTranslationId)}</textarea></div>`:""}</div>`).join(""):"";
+ return `<section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm">
+ <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-4 border-slate-200 dark:border-zinc-800">
+  <div><h2 class="text-lg font-extrabold">✨ Penentuan Judul Drama</h2><p class="text-xs font-medium text-slate-600 dark:text-zinc-300">Pilih Kategori dan Genre untuk menampilkan 5 judul instan. Klik "Berikan ide judul lain" untuk variasi AI.</p></div>
+  <span class="px-3 py-1 rounded-lg text-xs font-extrabold bg-rose-700 text-white">Aktif: ${esc(S.cat)} • ${esc(genreEff())}</span></div>
+ <div class="grid md:grid-cols-2 gap-4"><div><label class="lbl">Kategori Drama</label><select class="inp !text-sm" onchange="setCat(this.value)">${opt(Object.keys(CATS),S.cat)}</select></div>
+ ${isC?`<div><label class="lbl">Ketik Genre / Tema Custom</label><div class="flex gap-2"><input class="inp" placeholder="Contoh: Perjuangan Kuliner..." value="${esc(S.custom)}" oninput="S.custom=this.value"><button class="btn bg-rose-600" onclick="applyCustom()">Terapkan</button></div></div>`:""}</div>
+ ${S.cat!=="Custom"?`<div><label class="lbl">Pilih Genre (${esc(S.cat)}):</label><div class="flex flex-wrap gap-2">${CATS[S.cat].map(g=>`<button class="chip ${S.genre===g?"on":""}" onclick="setGenre(this.dataset.g)" data-g="${esc(g)}">${esc(g)}</button>`).join("")}</div></div>`:""}
+ <div class="flex flex-wrap items-center justify-between gap-3"><div class="inline-flex rounded-xl p-1 border bg-slate-300/60 border-slate-400 dark:bg-zinc-950/40 dark:border-zinc-700">
+  <button onclick="S.mode='ai';render()" class="px-4 py-2 rounded-lg text-xs font-extrabold ${S.mode==="ai"?"bg-rose-600 text-white":""}">5 Pilihan Judul AI</button>
+  <button onclick="S.mode='manual';render()" class="px-4 py-2 rounded-lg text-xs font-extrabold ${S.mode==="manual"?"bg-rose-600 text-white":""}">Tulis Judul Sendiri</button></div>
+  ${S.mode==="ai"?`<button onclick="shuffleTitles()" class="btn bg-amber-600 hover:bg-amber-500 shadow">🔄 Berikan ide judul lain</button>`:""}</div>
+ ${S.mode==="ai"?`<div class="space-y-2.5">${bil?`<p class="text-xs font-bold text-amber-800 dark:text-amber-400">* Khusus ${esc(S.cat)}: 3 judul Inggris & 2 judul Indonesia.</p>`:""}${titlesHtml||'<p class="text-sm font-bold text-rose-500">Ketik tema custom lalu klik Terapkan.</p>'}</div>`
+ :`<div class="sub p-4 rounded-xl"><label class="lbl">Judul Drama Anda</label><input class="inp !text-sm !py-3" placeholder="Ketik judul drama..." value="${esc(S.manual)}" oninput="S.manual=this.value;header()"></div>`}
+ </section>
+
+ <section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm"><h3 class="font-extrabold">📚 Pengaturan Alur Cerita, Bahasa & Format Video</h3>
+  <div><label class="lbl">Sumber Ide Cerita</label><div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">${["Terpopuler","Paling Viral","Rekomendasi AI","Ide Cerita Sendiri"].map(s=>`<button class="chip ${S.src===s?"on":""}" onclick="S.src='${s}';render()">${s}</button>`).join("")}</div>
+  ${S.src==="Ide Cerita Sendiri"?`<textarea rows="3" class="inp mt-3 !font-medium" placeholder="Tuliskan premis..." oninput="S.premise=this.value">${esc(S.premise)}</textarea>`:""}</div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+   <div><label class="lbl">Bahasa Dialog</label><select class="inp" onchange="S.dlang=this.value;render()">${opt(["Bahasa Indonesia","Inggris","Korea","Melayu","China"],S.dlang)}</select></div>
+   <div><label class="lbl flex justify-between">Watermark Visual <span class="text-rose-500">${S.wm.length}/15</span></label><input class="inp" maxlength="15" placeholder="Nama Watermark / Nama channel" value="${esc(S.wm)}" oninput="S.wm=this.value;header()"></div>
+   <div><label class="lbl">Durasi (@ 10 dtk/scene)</label><select class="inp" onchange="S.dur=this.value;render()">${opt(["1 Menit","2 Menit","3 Menit","10 Menit","1 Jam"],S.dur)}</select><p class="mt-1.5 text-[11px] font-bold ${mins()>3?"text-amber-500":"text-emerald-500"}">${mins()>3?"⚡ Di atas 3 menit: dibuat per episode (maks. 15 scene/episode).":"✓ 1–3 menit: drama langsung tamat."}</p></div>
+   <div><label class="lbl">Rasio Video & Gambar</label><div class="grid grid-cols-2 gap-2">${["9:16","16:9"].map(r=>`<button class="chip ${S.ratio===r?"on":""}" onclick="S.ratio='${r}';render()">📱 ${r}</button>`).join("")}</div></div>
+   <div><label class="lbl">Waktu / Suasana</label><select class="inp" onchange="S.time=this.value">${opt(["Rekomendasi AI","Pagi","Siang","Sore","Malam"],S.time)}</select></div>
+   <div><label class="lbl">Kondisi Cuaca</label><select class="inp" onchange="S.weather=this.value">${opt(["Rekomendasi AI","Cerah","Mendung","Hujan","Hujan Lebat dan Badai Petir","Berkabut"],S.weather)}</select></div></div></section>
+
+ <section class="card p-5 sm:p-6 rounded-2xl space-y-4 shadow-sm">
+  <div class="flex flex-wrap justify-between gap-3"><div><h3 class="font-extrabold">👥 Daftar Karakter (${esc(genreEff())})</h3><p class="text-xs text-slate-600 dark:text-zinc-300">Minimal 2 karakter, tanpa batas maksimal.</p></div>
+  <div class="flex gap-2 flex-wrap"><button class="btn bg-zinc-700" onclick="S.cast=defaultCast();render()">🔄 Reset</button><button class="btn bg-rose-600" onclick="addChar()">＋ Tambah Tokoh (${S.cast.length})</button></div></div>
+  <div class="p-3.5 rounded-xl border flex flex-wrap items-center gap-2 ${ck.ok?"bg-emerald-50 border-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-600/70":"bg-rose-50 border-rose-400 dark:bg-rose-950/40 dark:border-rose-500/80"}"><span class="text-xs font-extrabold uppercase">Checklist Drama:</span>
+   ${[[ck.main,"1 Tokoh Utama (Baik/Jahat/Netral)"],[ck.count,`Minimal 2 Tokoh (Saat ini: ${S.cast.length} Tokoh)`]].map(([o,l])=>`<span class="px-2.5 py-1 rounded-lg text-xs font-extrabold text-white border ${o?"bg-emerald-700 border-emerald-500":"bg-rose-700 border-rose-400"}">${o?"✓":"✕"} ${l}</span>`).join("")}</div>
+  <div class="space-y-4">${castHtml}</div>
+  <button ${ck.ok?"":"disabled"} onclick="genScript()" class="w-full py-4 rounded-2xl font-extrabold text-base shadow-xl text-white ${ck.ok?"bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500":"bg-zinc-600/50 cursor-not-allowed"}">${sc?"🔄 Buat ulang naskah drama":`✨ Buat Naskah Drama: "${esc(title())}"`}</button></section>
+
+ ${sc?`<section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm">
+  <div class="flex flex-wrap justify-between gap-3 border-b pb-4 border-slate-200 dark:border-zinc-800"><div><span class="inline-block px-3 py-1 rounded-lg text-xs font-extrabold bg-emerald-700 text-white mb-1">Naskah Siap • ${sc.scenes.length} Scene (@ 10 Detik)</span><h3 class="text-xl font-extrabold">${esc(sc.title)}</h3></div>
+  <button class="btn bg-rose-600 self-start" onclick="go(2)">Lanjut ke Karakter & Storyboard ›</button></div>
+  <div><label class="lbl">Sinopsis Lengkap</label><textarea rows="5" class="inp !font-medium !text-sm" oninput="S.script.synopsis=this.value">${esc(sc.synopsis)}</textarea></div>
+  <div class="space-y-5">${scenes}</div>
+  <div class="text-right"><button class="btn bg-gradient-to-r from-rose-600 to-amber-600 !text-sm !px-6 !py-3.5" onclick="go(2)">Lanjut ke Karakter & Storyboard ›</button></div></section>`:""}`}
+
+function step2(){
+ return `<section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm"><div class="border-b pb-4 border-slate-200 dark:border-zinc-800"><h2 class="text-lg font-extrabold">👥 Karakter & Storyboard — Character Sheet (${esc(S.cat)})</h2><p class="text-xs text-slate-600 dark:text-zinc-300">Prompt kunci karakter dan storyboard siap disalin ke tools gambar/video AI. Kunci karakter agar konsisten.</p></div>
+ <div class="grid lg:grid-cols-2 gap-5">${S.cast.map(c=>`<div class="sub p-4 rounded-2xl space-y-3"><div class="flex justify-between flex-wrap gap-2"><div><span class="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold text-white mr-2 ${roleCls(c.label)}">${c.label}</span><b>${esc(c.name)}</b> <span class="text-xs opacity-75">(${c.gender}, ${esc(c.age)} thn)</span></div><span class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold text-white ${S.locked?"bg-emerald-700":"bg-amber-700"}">${S.locked?"Terkunci":"Bisa Diedit"}</span></div>
+  <div class="card p-3 rounded-xl text-xs leading-relaxed"><b class="text-rose-500 uppercase text-[11px] block">Deskripsi Peran:</b>${esc(c.role)}</div>
+  <label class="lbl">Prompt Character Sheet (Turnaround)</label><textarea readonly rows="4" class="inp !font-mono !font-medium">8K photorealistic character reference sheet turnaround, 16:9. LEFT: three full-body views (front, side, back); RIGHT: studio close-up portrait. ${esc(lock(c))} Neutral grey studio background. ${esc(NEG)}</textarea>
+  <button class="btn bg-rose-600" onclick="copy(this.previousElementSibling.value,'Prompt karakter')">📋 Copy Prompt</button></div>`).join("")}</div>
+ <button onclick="S.locked=!S.locked;render();toast(S.locked?'Karakter & Outfit dikunci!':'Kunci karakter dibuka.')" class="w-full py-4 rounded-2xl font-extrabold text-base shadow-xl text-white ${S.locked?"bg-emerald-700 border-2 border-emerald-400":"bg-gradient-to-r from-amber-600 to-rose-600"}">${S.locked?"🔓 Karakter Terkunci (Klik untuk Edit)":"🔒 Kunci Karakter & Outfit"}</button></section>
+ <section class="card p-5 sm:p-6 rounded-2xl space-y-4 shadow-sm"><h3 class="text-lg font-extrabold">🖼 Storyboard Visual Per Scene (Rasio ${S.ratio})</h3>
+ <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">${(S.script?.scenes||[]).map(s=>{const p=`Cinematic photorealistic 8K frame (${S.ratio}), real human actors. Category: ${S.cat} (${genreEff()}). Location: ${s.location}. Time: ${S.time}. Weather: ${S.weather}. Action: ${s.action}. Characters: ${(s.characters||[]).map(n=>{const c=S.cast.find(x=>x.name.toLowerCase()===n.toLowerCase());return c?lock(c):n}).join(" ")} ${NEG}`;
+  return `<div class="sub p-4 rounded-xl space-y-2"><div class="flex justify-between"><span class="px-2.5 py-1 rounded-md text-xs font-extrabold bg-rose-700 text-white">Scene ${s.n}</span><span class="text-xs font-bold truncate max-w-[160px]">${esc(s.location)}</span></div><p class="text-xs line-clamp-3">${esc(s.action)}</p><textarea readonly rows="3" class="inp !font-mono !font-medium">${esc(p)}</textarea><button class="btn bg-rose-600 w-full justify-center" onclick="copy(this.previousElementSibling.value,'Prompt Storyboard')">📋 Copy Prompt Storyboard</button></div>`}).join("")||'<p class="text-sm font-bold">Buat naskah dulu di Langkah 1.</p>'}</div>
+ <div class="flex justify-between pt-4 border-t border-slate-200 dark:border-zinc-800"><button class="btn bg-zinc-700" onclick="go(1)">‹ Kembali</button><button class="btn bg-gradient-to-r from-rose-600 to-amber-600 !text-sm !px-6 !py-3" onclick="toStep3()">Lanjut ke Prompt Video ›</button></div></section>`}
+
+function step3(){
+ const all=()=>S.vprompts.map(p=>`=== SCENE ${p.n} ===\n${p.text}`).join("\n\n");window.__all=all;
+ return `<section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm"><div class="flex flex-wrap justify-between gap-3 border-b pb-4 border-slate-200 dark:border-zinc-800"><div><h2 class="text-lg font-extrabold">🎥 Prompt Video AI Per Scene (10 Detik • SFX Only)</h2><p class="text-xs text-slate-600 dark:text-zinc-300">Hasil edit dialog dan karakter terkunci diterapkan di sini.</p></div><button class="btn bg-emerald-700 self-start" onclick="copy(window.__all(),'Semua Prompt Video')">📋 Copy Semua</button></div>
+ <div class="space-y-4">${S.vprompts.map(p=>`<div class="sub p-4 rounded-xl space-y-3"><div class="flex justify-between"><span class="px-3 py-1 rounded-lg text-xs font-extrabold bg-rose-700 text-white">Scene ${p.n} (10s • ${S.ratio})</span><button class="btn bg-rose-600 !py-1.5" onclick="copy(this.closest('.sub').querySelector('textarea').value,'Prompt Scene ${p.n}')">📋 Copy</button></div><textarea rows="8" class="inp !font-mono !font-medium !text-xs" oninput="editVP(${p.n},this.value)">${esc(p.text)}</textarea></div>`).join("")}</div>
+ <div class="flex justify-between pt-4 border-t border-slate-200 dark:border-zinc-800"><button class="btn bg-zinc-700" onclick="go(2)">‹ Kembali</button><button class="btn bg-gradient-to-r from-rose-600 to-amber-600 !text-sm !px-6 !py-3" onclick="go(4)">Lanjut buat Poster Drama ›</button></div></section>`}
+
+function step4(){
+ const P=posterPrompts();
+ return `<section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm"><div class="border-b pb-4 border-slate-200 dark:border-zinc-800"><h2 class="text-lg font-extrabold">🖼 Prompt Poster Realistis Sinematik (${S.ratio})</h2><p class="text-xs text-slate-600 dark:text-zinc-300">Judul dramatis diletakkan tepat di tengah poster. Edit teks hook, lalu salin prompt ke tools gambar AI.</p></div>
+ <div class="grid md:grid-cols-2 gap-4"><div><label class="lbl">Teks Hook Versi 1</label><input class="inp" value="${esc(S.hooks.h1)}" onchange="S.hooks.h1=this.value;render()"></div><div><label class="lbl">Teks Hook Versi 2</label><input class="inp" value="${esc(S.hooks.h2)}" onchange="S.hooks.h2=this.value;render()"></div></div>
+ <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">${P.map(([t,p])=>`<div class="sub p-4 rounded-xl space-y-3"><span class="inline-block px-2.5 py-1 rounded-md text-xs font-extrabold bg-indigo-700 text-white">${t}</span><textarea readonly rows="7" class="inp !font-mono !font-medium !text-xs">${esc(p)}</textarea><button class="btn bg-rose-600 w-full justify-center" onclick="copy(this.previousElementSibling.value,'Prompt poster')">📋 Copy Prompt</button></div>`).join("")}</div>
+ <div class="flex justify-between pt-4 border-t border-slate-200 dark:border-zinc-800"><button class="btn bg-zinc-700" onclick="go(3)">‹ Kembali</button><button class="btn bg-gradient-to-r from-rose-600 to-amber-600 !text-sm !px-6 !py-3" onclick="genSeo()">Lanjut ke SEO & Tips Viral ›</button></div></section>`}
+
+function step5(){const d=S.seo;if(!d)return `<section class="card p-6 rounded-2xl"><button class="btn bg-rose-600" onclick="genSeo()">Buat Paket SEO</button></section>`;
+ return `<section class="card p-5 sm:p-6 rounded-2xl space-y-4 shadow-sm"><div class="flex justify-between border-b pb-4 border-slate-200 dark:border-zinc-800"><h2 class="text-lg font-extrabold">💡 6 Tips & Trik Viral Spesifik (${esc(genreEff())})</h2><button class="btn bg-amber-600" onclick="genSeo()">🔄 Muat Ulang SEO</button></div>
+ <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3.5">${(d.viralTips||[]).map((t,i)=>`<div class="sub p-4 rounded-xl flex gap-3"><span class="w-7 h-7 rounded-lg bg-rose-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0">${i+1}</span><p class="text-xs font-semibold leading-relaxed">${esc(t)}</p></div>`).join("")}</div></section>
+ <section class="card p-5 sm:p-6 rounded-2xl space-y-5 shadow-sm"><div class="grid md:grid-cols-2 gap-5">
+ <div class="sub p-4 rounded-xl space-y-2.5"><h3 class="font-extrabold text-sm">3 Alternatif Judul SEO</h3>${(d.seoTitles||[]).map(s=>`<div class="flex justify-between gap-2 p-2.5 rounded-lg bg-black/10 text-xs font-bold"><span>${esc(s)}</span><button class="px-2 py-1 rounded bg-rose-600 text-white text-[11px]" onclick="copy(this.dataset.t,'Judul SEO')" data-t="${esc(s)}">Salin</button></div>`).join("")}</div>
+ <div class="sub p-4 rounded-xl space-y-2.5"><div class="flex justify-between"><h3 class="font-extrabold text-sm">Keywords & Hashtag Viral</h3><button class="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-xs font-bold" onclick="copy(S.seo.hashtags.join(' '),'Hashtags')">Copy Hashtags</button></div><p class="text-xs font-semibold">${esc(d.shortDescription)}</p><div class="flex flex-wrap gap-1.5">${(d.hashtags||[]).map(h=>`<span class="px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-indigo-800 text-white">${esc(h)}</span>`).join("")}</div></div></div>
+ <div class="grid md:grid-cols-3 gap-4">${[["Caption TikTok",d.tiktokCaption],["Caption Instagram Reels",d.reelsCaption],["Caption YouTube Shorts",d.shortsCaption]].map(([l,t])=>`<div class="sub p-4 rounded-xl flex flex-col justify-between gap-3"><div><h4 class="font-extrabold text-sm mb-2">${l}</h4><p class="text-xs whitespace-pre-line leading-relaxed">${esc(t)}</p></div><button class="btn bg-rose-600 justify-center" onclick="copy(this.dataset.t+'\\n\\n'+S.seo.hashtags.join(' '),'${l}')" data-t="${esc(t)}">📋 Copy Caption + Hashtag</button></div>`).join("")}</div>
+ <div class="flex flex-wrap justify-between gap-3 pt-4 border-t border-slate-200 dark:border-zinc-800"><button class="btn bg-zinc-700" onclick="go(4)">‹ Kembali</button><button class="btn bg-gradient-to-r from-emerald-600 to-teal-600 !text-sm !px-6 !py-3" onclick="resetAll()">🔄 Buat Drama Baru (Reset Studio)</button></div></section>`}
+
+function render(){
+ header();const m=$("main");
+ const keyWarn=S.key?"":`<div class="p-3.5 rounded-xl border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-xs font-bold flex flex-wrap items-center justify-between gap-2"><span>🔑 Fitur AI (naskah, saran judul, SEO) butuh Gemini API Key. Judul instan & prompt tetap berjalan tanpa key.</span><button class="btn bg-indigo-700" onclick="setKey()">Isi API Key</button></div>`;
+ m.innerHTML=keyWarn+[step1,step2,step3,step4,step5][S.step-1]();
+}
+setTitles();render();
+</script>
+</body>
+</html>
